@@ -1,0 +1,11 @@
+services:
+  paperless-worker:
+    build: .
+    container_name: paperless-worker
+    restart: unless-stopped
+    environment:
+      UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL}
+      PAPERLESS_API_URL: ${PAPERLESS_API_URL}
+      PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN}
+      ORACLE_API_URL: ${ORACLE_API_URL}
+      ORACLE_API_KEY: ${ORACLE_API_KEY}
