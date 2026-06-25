@@ -15,3 +15,10 @@ services:
       B2_SECRET_ACCESS_KEY: ${B2_SECRET_ACCESS_KEY}
       B2_BUCKET: ${B2_BUCKET}
       B2_PUBLIC_URL: ${B2_PUBLIC_URL}
+    networks:
+      - paperless_network
+
+networks:
+  paperless_network:
+    external: true
+    name: paperless_paperless_network
