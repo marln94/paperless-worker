@@ -133,13 +133,12 @@ export class DocumentsProcessor extends WorkerHost {
         'Paperless request finished with status',
         response.status,
       );
-    } catch (err) {
-      this.logger.error(err);
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
     }
   }
 
   private async findOrCreateCorrespondent(name: string): Promise<number> {
-    this.logger.log('name', name);
     const searchResponse = await fetch(
       `${process.env.PAPERLESS_API_URL}/api/correspondents/?name__icontains=${encodeURIComponent(name)}`,
       {
