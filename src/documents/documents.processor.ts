@@ -2,6 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { PDFDocument } from 'pdf-lib';
+import sharp from 'sharp'
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -37,48 +38,38 @@ export class DocumentsProcessor extends WorkerHost {
     // TODO: update attachment status on DB
   }
 
-  /**
-   * Combines an array of local image paths into a single PDF file.
-   * @param imagePaths Array of absolute or relative paths to the images.
-   */
-  private async joinImagesToPdf(imagePaths: string[]) {
-    // Create a blank PDF Document
+  private async joinImagesToPdf(imagePaths: string[]): Promise<Uint8Array> {
     const pdfDoc = await PDFDocument.create();
 
     for (const imgPath of imagePaths) {
       const ext = path.extname(imgPath).toLowerCase();
-      const imageBytes = fs.readFileSync(imgPath);
 
-      let embeddedImage;
-
-      // Embed the appropriate image type based on file extension
-      if (ext === '.jpg' || ext === '.jpeg') {
-        embeddedImage = await pdfDoc.embedJpg(imageBytes);
-      } else if (ext === '.png') {
-        embeddedImage = await pdfDoc.embedPng(imageBytes);
-      } else {
+      if (ext !== '.jpg' && ext !== '.jpeg' && ext !== '.png') {
         this.logger.warn(`Unsupported file format skipped: ${ext}`);
         continue;
       }
 
-      // Get original dimensions of the image
+      const imageBytes = fs.readFileSync(imgPath);
+
+      // Corrige orientación EXIF y normaliza a JPEG
+      const correctedBuffer = await sharp(imageBytes)
+        .rotate()
+        .jpeg({ quality: 85 })
+        .toBuffer();
+
+      const embeddedImage = await pdfDoc.embedJpg(correctedBuffer);
       const { width, height } = embeddedImage.scale(1);
 
-      // Add a new page matching the exact dimensions of the image
       const page = pdfDoc.addPage([width, height]);
-
-      // Draw the image to fill the entire page
       page.drawImage(embeddedImage, {
         x: 0,
         y: 0,
-        width: width,
-        height: height,
+        width,
+        height,
       });
     }
 
-    // Serialize the PDFDocument to bytes
-    const pdfBytes = await pdfDoc.save();
-    return pdfBytes;
+    return pdfDoc.save();
   }
 
   private async uploadToPaperless(
