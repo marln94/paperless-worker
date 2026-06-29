@@ -6,7 +6,7 @@ import { DocumentsModule } from './documents/documents.module';
   imports: [
     BullModule.forRoot({
       connection: {
-        url: process.env.UPSTASH_REDIS_REST_URL,
+        url: process.env.REDIS_URL,
         maxRetriesPerRequest: null,
       },
     }),
